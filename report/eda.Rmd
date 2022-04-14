@@ -1,0 +1,840 @@
+# Exploratory Data Analysis
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+## Summary Tables
+
+<br>
+
+Before starting with the visualization, for the first part of the exploratory data analysis, I created summary tables by joining or binding different data set together with specific conditions or criteria.
+
+<br>
+
+### Time Series Summary Tables
+
+<br>
+
+#### Regional Time series {-}
+
+
+Here I created a unified data frame for vaccine and covid time series data, combined into one.   
+From the `Covid` data set I only took the cumulative variable witch are `total_cases`, `deaths` and `swabs` plus the daily variable `new_positives` that indicate the number of new positives per day.   
+From the `Vaccination` data set I took all the variables available. Regarding the vaccine data set, here I change some name of the variables:    
+- `vacc.m` and `vacc.f` indicate the males and females that got vaccinated;   
+- `vacc.1d` and `vacc.tot` indicate how many first doses was made and how many fully vaccinated people there are.       
+I made this in order to maintain comparability between the data.   
+
+
+```{r, fig.height= 10}
+Region.ts <- left_join(
+  covid %>%  select( -total_hospitalised, -total_positives  ),
+  vaccine %>% ungroup() %>% select( -Supplier, -second.dose ) %>%
+    group_by(date,Region,area) %>% summarise(male = sum(male), female = sum(female), vacc.1d = sum(first.dose), full.vacc = sum(full.vacc)),
+  by = c("date", "Region", "area"))%>% 
+  group_by(date, Region, area) %>%
+    summarise(across(everything(), list(sum)))
+
+Region.ts[is.na(Region.ts)] <- 0
+
+Region.ts <- Region.ts %>% 
+  mutate(
+    vacc.m = male_1, vacc.f = female_1, vacc.1d = vacc.1d_1, Vacc.tot = full.vacc_1, cases = total_cases_1, positives = new_positives_1,deaths = deaths_1, swabs = swabs_1) %>%
+  select(-male_1, -female_1, -full.vacc_1, -new_positives_1, -total_cases_1, -deaths_1, -swabs_1, -vacc.1d_1)
+
+kbl(Region.ts, longtable = F) %>%
+ kable_classic("striped", full_width = F) %>%
+  scroll_box(width = "100%", height = "400px")
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Notes:**   
+1- Dataset Time Frame: from 24 feb until today.   
+2- Vaccination figures NA before <date>, given the delay in vaccine rollout, so we transformed them to zero for charting and analysis purposes.     
+3- I remind you that vaccination variables are on a daily basis, as well as positive cases; while other covid variables are cumulative.
+</div>
+
+<br>
+
+### Indicator Summary Tables
+
+<br>
+
+#### Regional Inidicators {-}
+
+Here I created a unified data frame for population, unemployment, vaccine, covid, educational level and inequality.    
+The various data set were all merged into one by the `Region` and `area` variable.   
+
+- From Population data set I simply added the total number of population per Region (`tot.pop`) that I will use as a mean of comparison for the incidence of all the other variables;
+- From the Unemployment one I took the average number by region (`Avg.unmpl`) from the column representing the total unemployed people;
+- From the Vaccine data set I took the sum of the fully vaccinated people by Region (`Vaccination`);
+- From Covid data set I used the last day for every region and I sliced the data set to take the total covid cases (`total_cases`), `deaths` and testing number (`swabs`). I made this as they are cumulative variables and so I will always be able to show the most recent number available regarding them; 
+- From the Education one I only used the university degree holders (`Univ.level`)to show the percentage number of the most acculturate citizens;
+- The last one was the Inequality data set. From this one I simply took the value give per region of the Gini index (`inequality`).   
+   
+After that I transformed all population based units of measures to percentage of population for comparability between all variables and Region.
+
+<br>
+
+```{r}
+
+Region.ind <- data.frame(left_join(
+  unemployment %>% group_by(Region) %>% summarise(Avg.unmpl = mean(total)),
+  vaccine %>% ungroup() %>% group_by(Region) %>% summarise(Vaccination = sum(full.vacc)),
+  by = "Region"
+) %>%
+  left_join(
+    population %>% mutate(tot.pop = Value) %>% select(-Value),
+    by = "Region"
+  ) %>%
+  left_join(
+    covid %>% arrange(desc(date)) %>% slice(1:21) %>% ungroup() %>%
+      select(Region, total_cases, deaths, swabs) %>% group_by(Region) %>%
+      summarise(
+        total_cases = sum(total_cases), deaths = sum(deaths),
+        swabs = sum(swabs)
+      ),
+    by = "Region"
+  ) %>%
+  left_join(
+    education %>% filter(`Education Level` == "tertiary (university, doctoral and specialization courses)") %>%
+      group_by(Region) %>% summarise(Univ.level = sum(Total)),
+    by = "Region"
+  ) %>%
+  left_join(
+    inequality %>% group_by(Region) %>% summarise(inequality = mean(Value)),
+    by = "Region"
+  ))
+
+# transforming all data into percentage
+Region.ind <- Region.ind %>% mutate(
+  Vaccination = (Vaccination / tot.pop) * 100,
+  total_cases = (total_cases / tot.pop) * 100,
+  deaths = (deaths / tot.pop) * 100,
+  swabs = (swabs / tot.pop) * 100,
+  Univ.level = (Univ.level / tot.pop) * 100,
+  inequality = inequality*100
+) %>%
+  select(Region, area, tot.pop, Avg.unmpl:inequality)
+
+kbl(Region.ind) %>%
+ kable_classic("striped", full_width = F) 
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+
+**Note:**    
+1- I didn't used the poverty data set here as is only given to me with areas information, so I can not now how is the more specific regional situation.    
+2- This table shows regional data regarding updated pandemic variables, such as covid and vaccination, and other socio-economic factors all compared to the total regional population number.    
+3- Having a look we can see how the percentage of swabs made by region is enormous compared to the total citizens number. The cause of what apparently could seem as an error, is that every day government is testing people and lot of them have tested multiple times. That result in a high number of testing.
+
+</div>
+
+<br>
+
+#### Area Indicators {-}
+
+Here I did the same things but I group and sum by areas plus I was able to add the poverty index as it is available for the different areas only.   
+All the data set were joined together by area only.   
+
+- From poverty data set I took only the household index (`House.Pov.Rate`) as it is more used than the individual poverty index based on my readings;   
+
+As is quite clear, from the other data set I select the same variable used in the `Region.ind` data set and I then divided them all by the population obtaining the percentage measure.
+
+<br>
+
+```{r}
+Area.ind <- data.frame(left_join(
+  poverty %>% mutate(House.Pov.Rate = Household) %>% select(area, House.Pov.Rate),
+  vaccine %>% group_by(area) %>% summarise(Vaccination = sum(full.vacc)),
+  by = "area"
+) %>%
+  left_join(
+    unemployment %>% group_by(area) %>% summarise(Avg.unmpl = mean(total)),
+    by = "area"
+  ) %>%
+  left_join(
+    population %>% group_by(area) %>% summarise(tot.pop = sum(Value)),
+    by = "area"
+  ) %>%
+  left_join(
+    covid %>% arrange(desc(date)) %>% slice(1:21) %>%
+      select(area, total_cases, deaths, swabs) %>% group_by(area) %>%
+      summarise(
+        total_cases = sum(total_cases), deaths = sum(deaths),
+        swabs = sum(swabs)
+      ),
+    by = "area"
+  ) %>%
+  left_join(
+    education %>% filter(`Education Level` == "tertiary (university, doctoral and specialization courses)") %>%
+      group_by(area) %>% summarise(Univ.level = sum(Total)),
+    by = "area"
+  ) %>%
+  left_join(
+    inequality %>% group_by(area) %>% summarise(inequality = mean(Value)),
+    by = "area"
+  ))
+
+# transforming all data into percentage
+Area.ind <- Area.ind %>% mutate(
+  Vaccination = (Vaccination / tot.pop) * 100,
+  total_cases = (total_cases / tot.pop) * 100,
+  deaths = (deaths / tot.pop) * 100,
+  swabs = (swabs / tot.pop) * 100,
+  Univ.level = (Univ.level / tot.pop) * 100,
+  inequality = inequality*100
+) %>% select(area, tot.pop,House.Pov.Rate:inequality)
+
+kbl(Area.ind) %>%
+ kable_classic("striped", full_width = F)
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note**:    
+1- I took the average unemployment rate of the regions in an area.    
+2- This table shows area data regarding updated pandemic variables, such as covid and vaccination, and other socio-economic factors all compared to the total area population number. 
+I will use the table for a more macro geographic analysis.
+
+</div>
+
+<br>
+
+## General Data Visualization
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+To better understand our data set I will start off by plotting general variables of both time series and non-time series data to get a glimpse of my variables behavior.
+
+</div>
+
+### Visualizing the Relationship between Covid and Vaccination
+
+<br>
+
+#### Italy - Macro Level {-}
+
+The graph below was made using `Region.ts` data set.    
+I took the daily covid new cases from the data set (`positives`) and the daily vaccination numbers (`Vacc.tot`) and I plot them in the graph below for all of Italy. I also added the cumulative deaths numbers (`deaths`) to compare to covid and vaccine.   
+
+<br>
+
+```{r}
+tags$div(style="width: 100%; height: 4in",
+ggplotly(
+(ggplot(Region.ts %>%
+  ungroup() %>%select(-Region, -area) %>% arrange(date) %>%
+  group_by(date) %>% 
+  summarise(Vacc.tot = sum(Vacc.tot), positives = sum(positives), deaths=sum(deaths),
+            swabs = sum(swabs)) %>% arrange(date))+
+   geom_area(aes(date, deaths, color = "Cum. Deaths",
+                 fill = 'lightred'), alpha=0.3)+
+   geom_line(aes(date, Vacc.tot, color = "Daily Vaccination"))+
+  geom_line(aes(date, positives, color = "Daily Pos. Cases"))+
+   ggtitle("Italy - Covid Impact and Vaccination")+xlab("Date")+ylab("Number of People")+
+    scale_color_manual(values = brewer.pal(2, "Set1"))+
+   scale_color_discrete(name="")+
+   scale_fill_discrete(name = "")),
+ dynamicTicks = TRUE) %>%
+  rangeslider() %>%
+  layout(hovermode = "x"))
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- First thing we can notice from the graph, is that the number daily vaccine started to grow up significantly only from a certain moment and then to reduce since the end of July.  
+2- Secondly, looking at the covid, is very clear how cases start to grow more during  2020 and the actual 2021 autumn/winter seasons. That could be explained as in winter people tend to get more seasonal diseases (as fever, caught ex) and because tend to meet in close spaces due to the cold.    
+3- Looking at vaccination number in the graph, is visible that it starts to grow from 17 of January 2021. That is not indicating that the first vaccine doses were given in that date, but because we are considering the full vaccinated people, so only people that got one dose of Janssen or both dose of other vaccines.   
+4- Comparing the two data, vaccine and covid, is clear how vaccine grew more rapidly than covid cases.   
+5- Finally, looking at the deaths, as it is cumulative, is obviously increasing every day, but we can notice that with the peak period of vaccination, the curve started to flatten out.  
+
+</div>
+
+<br>
+
+#### Area-based Graph {-}
+
+The below visual shows the **new positive cases per day** and **vaccination numbers** for the different areas in Italy
+
+<br>
+
+```{r, fig.width=9, fig.height=4.5}
+(ggplot(covid %>% group_by(date, area) %>% arrange(date) %>%
+         summarise(positives = sum(new_positives)), aes(x = date, y = positives, fill = as.factor(area))) +
+  geom_area() +
+  scale_fill_discrete(name = "Areas") +
+  theme(legend.position = "none", axis.text.x = element_text(size = 6))+
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3)) +
+  ylab("Number of People") +
+  xlab("Date") +
+  ggtitle("Positive Cases"))+
+  
+ ( ggplot(Region.ts %>% group_by(date, area) %>%
+         summarise(vacc = sum(Vacc.tot)), aes(x = date, y = vacc, fill = as.factor(area))) +
+  geom_area() +
+  scale_fill_discrete(name = "Areas") +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3)) +
+  xlab("Date") +
+    theme(axis.title.y = element_blank(), axis.text.x = element_text(size = 6))+
+  ggtitle("Vaccination"))
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**    
+1- Thanks to this graph we can see how the *North* part of Italy was affected more by covid followed by the *South.* That's quite obvious as the *Center* and th *Islands* have less citizens. We can also see how the same is visible for the vaccine campaign.   
+2- A thing to consider by looking at the graph is that every area is kind of overlaid to the previous one. To understand deeply, for vaccination graph, looking at the *Center* is not true that at the peek there were 500k vaccination daily. The actual space covered by the vaccination of the *Center* is the one between *Center* and the previous area, *Islands*, and so on for every other area.
+
+</div>
+
+### {-}
+
+#### Region-based graph {.tabset}
+
+<br>
+
+Here we have two important type of graph. Both of them are divide by areas table showing every region in that area. (*Important: look at different notes for every group of table*) 
+
+##### Total Cases per Region {-}
+
+The first one is showing us the **cumulative covid cases** in Italy per region.
+
+<br>
+
+```{r, fig.width=9, fig.height=4.5}
+ggplot(Region.ts, aes(x = date, y = cases, fill = as.factor(Region))) +
+  geom_area() +
+  scale_y_continuous(labels = unit_format(
+    unit = "m", scale = 1e-6,
+    accuracy = 0.1
+  )) +
+  facet_wrap(~area) +
+  theme_light() +
+  scale_fill_discrete(name = "Regions") +
+  ylab("Number of People") +
+  xlab("Date") +
+  ggtitle("Cumulative Covid Cases per Region")+
+  theme(legend.title = element_text(size = 8), 
+               legend.text = element_text(size = 5))+ 
+  guides(color = guide_legend(override.aes = list(size = 0.3)))+
+  theme(axis.text.x =element_text(size=5, angle = 90, vjust = 0.5, hjust=1),
+        axis.title=element_text(size=8,face="bold"))+
+  scale_x_date(date_breaks = "3 month", 
+                 labels=date_format("%b-%y"))
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**    
+1- In this first representation regarding the cumulative covid cases, we can see how region as *Center* and *South* has very similar number and the same for *North-east* and *North-west*.    
+We can so deduce how the pandemic impact may have been worse in the *North* than in the rest of Italy, with region as *Lombardia*, *Veneto* and *Emilia-Romagna* badly affected by the virus;  
+
+</div>
+
+##### Full Vaccination per Region {-} 
+
+The second one refers to the **fully vaccinated people** for every region of Italy. (*Important: look at different notes for every table*) 
+
+<br>
+
+```{r, fig.width=9, fig.height=4.5}
+ggplot(Region.ts, aes(x = date, y = Vacc.tot, fill = as.factor(Region))) +
+  geom_area() +
+  scale_y_continuous(labels = unit_format(
+    unit = "K", scale = 1e-3,
+    accuracy = 1
+  )) +
+  facet_wrap(~area) +
+  theme_light() +
+  scale_fill_discrete(name = "Regions") +
+  ylab("Number of People") +
+  xlab("Date") +
+  ggtitle("Full Vaccination per Region")+
+  theme(legend.title = element_text(size = 8), 
+               legend.text = element_text(size = 5))+ 
+  guides(color = guide_legend(override.aes = list(size = 0.3)))+
+  theme(axis.text.x =element_text(size=5, angle = 90, vjust = 0.5, hjust=1),
+        axis.title=element_text(size=8,face="bold"))+
+  scale_x_date(date_breaks = "3 month", 
+                 labels=date_format("%b-%y"),
+                 limits = as.Date(c('2021-01-01','2022-01-01')))
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**    
+1- In the plots regarding the vaccination campaign, is quite visible how the area of *North-west* has more people vaccinated, with region of *Lombardia* ahead of all the others.   
+2- Following we can see *South* and then both *Center* and *North-east* at a similar level. Here the regions with more vaccinated people seems to be *Campania*, *Lazio*, *Veneto* and *Emilia-Romagna*.        
+   
+</div>   
+
+#### {-}
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+In both type of graph we can see how the trend and performance of pandemic situation and vaccination campaign is very similar for all the regions.    
+Regarding vaccines, the reason is that the vaccination campaign is organised by the central government of Italy so it will follow a very similar trend in every territory. 
+
+</div>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Consideration:**      
+Looking at these type of graphs could generate a misunderstanding for the reader.   
+That because obviously the region and area more populated tend to have also more vaccinated people and more covid cases (as the virus tend to spread rapidly when there are more people).   
+So it will be also useful to look at relative cases and vaccinated people correlated to the total population
+
+</div>
+
+<br>
+
+### Correlation of Areas {.tabset .tabset-pills}
+
+I will look now to some correlation plots of different Areas in order to check the relationship between the variables and to spot potential links. (*Important: look at the different notes for every table*) 
+
+#### Covid Cases Correlation Plot {-}
+
+I looked at the **new positive cases** in our `Region.ts` data set and group by the areas and the correlation between the different areas.
+
+<br>
+
+```{r}
+corrplot(cor(Region.ts %>% group_by(date, area) %>% summarise(value = sum(positives)) %>%
+  pivot_wider(names_from = area, values_from = value) %>%
+  ungroup() %>% select(-date)),
+method = "circle",
+order = "alphabet",
+addrect = 2, # If order = "hclust", number of cluster rectangles
+rect.col = 2, # Color of the rectangles
+rect.lwd = 2,
+  addCoef.col = "white",
+  addCoefasPercent = FALSE,
+number.cex = 0.5,
+tl.cex = 0.8
+)
+mtext("Covid Positive Cases
+      Correlation between Areas",
+  at = -1.25, line =-1.25, cex = 0.65
+)
+```
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**    
+The correlation in this plot is very clear.   
+We can see how the more the areas are geographically closed to each other, the more are correlated. 
+Looking at two opposite example:    
+- In one hand we have *Center* that has a strong correlation to all the areas, except for *Islands*, as it is situated in the middle of Italy and is probably influenced by the contagious of other areas;   
+- In the other one we can see how *Islands* is an area that have a weak correlation with all the other ones. That's is quite obvious as *Sardegna* and *Sicilia*, the two region in this area, are completely detached from the others.     
+
+</div>
+
+<br>
+
+#### Full Vaccination Correlation Plot {-}
+
+Always starting from the `Region.ts` data set, I created a plot that shows the **fully vaccinated number of people** grouped by areas and the correlation between the different areas.
+
+<br>
+
+```{r}
+corrplot(cor(Region.ts %>% group_by(date, area) %>% filter(date >= "2021-01-17") %>%
+  summarise(value = sum(Vacc.tot)) %>%
+  pivot_wider(names_from = area, values_from = value) %>%
+  ungroup() %>% select(-date)),
+method = "circle",
+order = "alphabet", 
+addrect = 2, # If order = "hclust", number of cluster rectangles
+rect.col = 2, # Color of the rectangles
+rect.lwd = 2,
+  addCoef.col = "white",
+  addCoefasPercent = FALSE,
+number.cex = 0.5,
+tl.cex = 0.8
+)
+mtext("Full Vaccination Numbers
+ Correlation between Areas",
+  at = -1.2, line = -1.25, cex = 0.65
+)
+```
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**    
+1- In this plot is noticeable a strong correlation between all the areas.    
+As explained before, the vaccination campaign is directly regulated and organised by the central Italian government. So is quite obvious all the areas will result in having a strong correlation between them.   
+2- What I will try to focus is the reason why there still some people that are not vaccinated, and looking at the percentage in some areas are a little bit more than in the others.
+
+</div>
+
+<br>
+
+### {-}
+
+
+### Mapping of Italy by Regions 
+
+In order to visualize the non-time series socio-economic indicators as well as a snapshot of the latest values from **covid**, **vaccine** and **unemployment** data sets, I created some interactive map to check the differences in values between across all regions in Italy.   
+
+In order to do that I merged the region based data set with an identification table of regions in order to draw the maps. I also had to combine *PA Trento* and *PA bolzano* into `Trentino` to match our map regions. Population was summed for these 2 regions while other percentage indicators were average after being grouped.
+
+<br>
+
+```{r}
+map.it <- "https://raw.githubusercontent.com/stefanocudini/leaflet-geojson-selector/master/examples/italy-regions.json" %>%
+  GET() %>%
+  content() %>%
+  jsonlite::fromJSON(simplifyVector = FALSE)
+
+df.map.it <- map.it$features %>%
+  map_df(function(x) {
+    as.data.frame(x$properties)
+  })
+
+df.map.it <- data.frame(
+  df.map.it
+) %>%
+  arrange(name) %>%
+  rename(Region = name)
+
+df.map.it$Region <- c(
+  "Abruzzo", "Basilicata", "Calabria", "Campania",
+  "Emilia-Romagna", "Friuli-Venezia Giulia",
+  "Lazio", "Liguria", "Lombardia", "Marche", "Molise", "Piemonte", "Puglia",
+  "Sardegna", "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria",
+  "Valle d'Aosta", "Veneto"
+)
+
+Region.map <- Region.ind
+Region.map$Region[Region.map$Region == "P.A. Bolzano"] <- "Trentino-Alto Adige"
+Region.map$Region[Region.map$Region == "P.A. Trento"] <- "Trentino-Alto Adige"
+
+Region.map <- Region.map %>%
+  group_by(Region) %>%
+  summarise(
+    tot.pop = sum(tot.pop),
+    across(c(Avg.unmpl:Vaccination, total_cases:inequality), list(mean))
+  )
+
+df.map.it <- left_join(df.map.it, Region.map, by = "Region") 
+
+kbl(df.map.it) %>%
+ kable_classic("striped", full_width = F) 
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- **The indicators are all in percentage and based on regional population number.**   
+2- In this table variables as: `id`, `length` and `area` represent coordinate that will permit me to create the map of Italy.
+
+</div>
+
+<br>
+
+#### Italy Indicator Maps {.tabset .tabset-pills}
+
+<br>
+
+The below shows different maps for different indicators colored by a numeric scale of density based on the values of each region. (*Important: look at different notes for every table*) 
+
+<br>
+
+##### Covid Cases Map {-}
+ 
+Below we can see the map of **total covid cases number** in Italy by region.
+
+```{r}
+highchart(type = "map") %>%
+  hc_add_series_map(
+    map = map.it, df = df.map.it, joinBy = "id",
+    value = "total_cases_1", name = "Region"
+  ) %>%
+  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
+    hc_tooltip(valueDecimals= 2) %>%
+  hc_title(
+    text = "Italy - Covid Cases (%)",
+    margin = 20,
+    align = "center",
+    style = list(color = "blue", useHTML = TRUE)
+  )
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- Here we can see how the covid-19 virus spread in a completely different way in every region.   
+2- Looking at northern region, they seems have been affected more than every other regions. Most of them, making an exception for *Lombardia* (the most populated one) and *Piemonte*, have an incident higher than 10% of the population.    
+3- With around 14% affected population, *Trentino-alto Adige* results as the most infected region of Italy.   
+4- The only region, in the center/south/islands areas, that touch the 9% cases of infection is *Campania*. An explanation for this could be that the virus started to spread in Italy from the North part, precisely from the region of *Lombardia*, where was located the very first Italian case. Due to this the regional institutions of that regions were unprepared to face a the pandemic situation. Opposite, the other regions of Italy had more time to prepare politically and social measure restrict the spread of the virus.
+
+</div>
+
+<br>
+
+##### Vaccination Map {-}
+
+Below we can see the map of **total vaccination number** in Italy by region.
+
+```{r}
+highchart(type = "map") %>%
+  hc_add_series_map(
+    map = map.it, df = df.map.it, joinBy = "id",
+    value = "Vaccination_1", name = "Region"
+  ) %>%
+  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
+    hc_tooltip(valueDecimals= 2)  %>%
+  hc_title(
+    text = "Italy - Vaccination Rate",
+    margin = 20,
+    align = "center",
+    style = list(color = "blue", useHTML = TRUE)
+  )
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- Thanks to this graph we can have a deep look to the ongoing vaccination campaign in every region.   
+2- Looking at every region, we can now see some difference.    
+*Lombardia* and *Toscana * seems to have the biggest percentage of people vaccinated, with, more or less, 78% of the entire regional population.    
+3- In the other hand there is the region of *Trentino-alto Adige* that seems to under-performing compared to all the other region as it hasn't reach yet the 70% of the population.
+
+</div>
+
+<br>
+
+##### Unemployment Map {-}
+
+Below we can see the map of **unemployment rate** in Italy by region.
+
+```{r}
+highchart(type = "map") %>%
+  hc_add_series_map(
+    map = map.it, df = df.map.it, joinBy = "id",
+    value = "Avg.unmpl_1", name = "Region"
+  ) %>%
+  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
+    hc_tooltip(valueDecimals= 2)  %>%
+  hc_title(
+    text = "Italy - Unemployment Rate",
+    margin = 20,
+    align = "center",
+    style = list(color = "blue", useHTML = TRUE)
+  )
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- This map plus the one regarding the inequality and education, will help to see social and economic difference between the regions.   
+2- Looking at it is clear how the unemployment rate in Italy is not that high for northern regions, but tend to increase going to the south of the peninsula.    
+3- *Campania*, *Puglia*, *Calabria*, *Sardegna* and *Sicilia* present what seems to be a dramatic situation as the unemployment rate fluctuate between 14% and 21%. This highlight a drastic difference between region as, for example, *Trentino-alto Adige* and *Campania*, with a respectively 4.25% (lowest value) and a 20.59% (highest value) of people unemployed. 
+
+</div>
+
+<br>
+
+##### Inequality Map {-}
+
+Below we can see the map of **inequality index** in Italy by region.
+
+```{r}
+highchart(type = "map") %>%
+  hc_add_series_map(
+    map = map.it, df = df.map.it, joinBy = "id",
+    value = "inequality_1", name = "Region"
+  ) %>%
+  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
+    hc_tooltip(valueDecimals= 2)  %>%
+  hc_title(
+    text = "Italy - Inequality Index",
+    margin = 20,
+    align = "center",
+    style = list(color = "blue", useHTML = TRUE)
+  )
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- Through this map we can check the inequality index among the population in every region.   
+2- The dark blue in some southern, insular and central region as *Campania*, *Calabria*, *Sicilia*, *Sardegna* and *Lazio*, evidence how there the inequality is more pronounced than in the others. As a matter of fact, they are the only region **above 0.30**, while the national mean of this index is **0.285**.
+
+</div>
+
+<br>
+
+##### Education Map {-}
+
+Below we can see the map of **highest education rate** in Italy by region.
+
+```{r}
+highchart(type = "map") %>%
+  hc_add_series_map(
+    map = map.it, df = df.map.it, joinBy = "id",
+    value = "Univ.level_1", name = "Region"
+  ) %>%
+  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
+    hc_tooltip(valueDecimals= 2)  %>%
+  hc_title(
+    text = "Italy - Higher Education Rate",
+    margin = 20,
+    align = "center",
+    style = list(color = "blue", useHTML = TRUE)
+  )
+
+```
+
+<br>
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- Here is shown the rate of the people that got the highest possible level of education, so the ones that completed at least the university cycle.   
+2- By simply calculating the mean of `Univ.level` in *`Region.ind`* data set, we can see that the average university percentage of people with at least a bachelor degree is of **13.1%**.   
+3- As in the previous two map chart, we can see the mainly difference is in the south and island regions, with an average of graduated people respectively of **11.7%** for the southern regions (with *Abruzzo* and *Molise* as the only ones that goes over 12%) and **11.1%** for the island ones.
+
+</div>
+
+<br>
+
+#### {-}
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Thanks these maps I was able to see how socio-economic factor as **inequality**, **unemployment** and **education**  are straight correlated to each other.   
+Comparing those variables to **covid** and **vaccines**, they seems to bee unrelated with them.   
+For the covid this could be explained as the main factor of the contagiousness among the regions was the time when the disease started to spread.    
+For the vaccine is, for now, unclear why some regions are lagging behind  other ones even if the campaign is managed by the central government. 
+
+</div>
+
+<br>
+
+### Information Channels
+
+<br>
+
+Is there any change in the way Italians in different regions receive information from channel sources between 2019 and 2020?   
+The point charts below show the **number of people and different channels** between the 2 years.
+
+<br>
+
+```{r, fig.width=9, fig.height=4.5}
+ggplot(info %>%
+         pivot_longer(cols = c(`2019`, `2020`), names_to = "Year", values_to = "Value"), aes(x = Year, color = `Data type`)) +
+  geom_point(aes(y = Value)) +
+  ggtitle("Info Channels in different Areas - 2019 Vs 2020") +
+  scale_y_continuous(labels = unit_format(
+    unit = "m", scale = 1e-6,
+    accuracy = 1
+  )) +
+  facet_wrap(~area, scales = "free")
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Note:**   
+1- What is more interesting to see here is that the main two channel of information in every area are *television* and *weekly magazines*.   
+2- Anyway in this graph seems that there are no big difference between the different areas. This has led me to exclude this variable as a possible "game changer" in my analysis.   
+
+</div>

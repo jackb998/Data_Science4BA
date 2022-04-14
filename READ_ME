@@ -1,0 +1,6 @@
+# This is the read me for my project
+
+*To access the video presentation you have to go to: https://youtu.be/dxTgFuRyhec
+
+WARNING: The Vaccine and Covid dataset are constantly updated from the government website.
+It could happen that they will add or remove columns from the source and may cause a problem during the knit. If that happen I suggest to check the source and adjust the dedicated raws of the code.

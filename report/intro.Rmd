@@ -1,0 +1,39 @@
+
+# Introduction
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+## Overview and Motivation
+
+The purpose of the project is to provide the reader with a wide set of potential tools to fully understand the impact of the covid in society and efficacy of the vaccination campaign.    
+Level of education, cultural heritage, political beliefs, people welfare, unemployment are just a few of the different factors that could have been affected by covid and could play a crucial role in shaping people's decision and current belief about the vaccination campaign. A prescient policymaker should be, thus, able to face a possible new pandemic situation and design an efficient vaccination campaign by taking into account all the sources of potential distress that can arise in a specific situation of interest.   
+In stressing such complex questions I started from the highly specific case of Italy and deeply analysed the ongoing Italian framework.    
+Italy initially struggled to contain the pandemic situation. Moreover, the national situation has not always been homogeneous but has constantly varied over time, differentiating between the various regions. This subsequently led to having a very heterogeneous response in the overall vaccination campaign, some regions seem more willing to get vaccinated, some others still struggle.    
+Also we may be able to notice how other variables are changed before and after the pandemic situation and if the vaccination campaign has been affected by this change.   
+The potential benefits of these types of research questions are big and widespread, especially for those countries which are still lagging behind in the vaccination campaign policy and for the developing countries which have not yet been able to deeply enter in this policy aspect.   
+Also, with hindsight bias, the thoughts and the considerations we will deal with, might be of great relevance while facing future pandemic challenges. What could we do next? Is there the possibility to build up a better pandemic plan for the future?
+
+
+
+## Related Work
+
+There is a  paper that study the Covid impact on Italy, most similar to my study is the following:  
+- Name of paper and link https://academic.oup.com/eurpub/article/31/Supplement_3/ckab165.083/6406229
+Although similar in objective but methods and data used are quite different.
+
+## Research questions
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+1. **What is the ongoing state of pandemic situation and the vaccination campaign in Italy? What is happening at a regional and Area level: Are there any differences between the 21 regions or the 5 Areas?**
+
+2. **Do socio-economic factors affect or relate to the impact of Covid across different areas or regions ?**
+
+3. **Given our datastet, what are the main drivers of vaccination: Are death rates, Covid cases, or socio-economic factors impacting Vaccination rates in different regions or areas?**
+
+</div> 

@@ -1,0 +1,17 @@
+---
+title: "Exploring the COVID Impact on Italy"
+author: "Jacopo Beghetto"
+date: "12/19/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+
+```{r child = c('intro.Rmd', 'data.Rmd', 'eda.Rmd', 'analysis.Rmd', 'concl.Rmd')}
+```

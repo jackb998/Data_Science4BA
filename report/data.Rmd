@@ -1,0 +1,751 @@
+# Data
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+## Data Description & Sources
+
+<br>
+
+### Time Series Datsets
+
+I will start by loading the two main data set, the one regarding the Covid and the one regarding the vaccines that will be used first to describe the pandemic situation and second to look at the progression of the vaccination campaign both about Italy. 
+
+<br>
+
+#### Covid Data
+
+```{r}
+covid <- as.data.frame(fromJSON("https://query.data.world/s/r6heradt54t2pjttgjfqumjxp6rhjj"))
+```
+   
+   _Source of the data set:_
+[https://query.data.world/s/r6heradt54t2pjttgjfqumjxp6rhjj]
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Description: This is a time based data set that gives information about the covid situation in Italy correlated to some variables.    
+It covers the period from the 24th February 2020 until today. Precisely the data set is always updated as is linked and downloaded directly from the source.    
+This will permit the reader to have the most precise and newest view of the covid situation in Italy.
+
+</div>   
+   
+<br>
+
+   The data contains 30 variables but I will focus only in few of them: `data`, `denominazione_regione`, `totale_ospdealizzati`, `totale_positivi`, `nuovi_positivi`, `deceduti`, `totale_casi`,`tamponi`.
+    
+Variables description:
+    
+- `data`: The daily based date;
+- `stato`: Indicates the state of Italy;
+- `codice_regione`: The regions abbreviation code;
+- `denominazione_regione`: The name of the 21 regions (Trentino Alto Adige is considered as 2 regions, autonomous province of Bolzano and Trento);
+- `lat` and `long`: The latitude and longitude;
+- `ricoverati_con_sintomi`: Current number of people hospitalized with covid symptoms;
+- `terapia_intensiva`: Current number of people affected by covid in intensive care;
+- `totale_ospedalizzati`: Sum of `ricoverati_con_sintomi` + `terapia_intensiva`. Indicate the current number of hospitalized subjects;
+- `isolamento_domiciliare`: The number of people that self-isolated;
+- `totale_positivi`: Current positives 
+- `vairazione_totale_positivi`: Daily variation of `totale_positivi`;
+- `nuovi_positivi`: Daily people tested positives;
+- `dimessi_guariti`: Hospital discharged and healed people;
+- `deceduti`: Cumulative number of deaths caused by Covid-19;
+- `casi_da_sospetto_diagnostico` and `casi da screening`: suspected diagnostic and screening cases
+- `totale_casi`: Cumulative number of Covid-19 cases;
+- `tamponi`: Cumulative number of swabs;
+- `casi_testati`: Tested cases, it means the cases that were tested with the swabs, both the negatives and positives;
+- `note`, `note_test` and `note_casi`: Notes referring to different columns;
+- `ingressi_terapia_intensiva`: New people in intensive care;
+- `totale_positivi_test_molecolare` and `totale_positivi_test_antigenico_rapido`: Cumulative number of people tested positive to molecular and antigen tests;
+- `tamponi_test_molecolare` and `tamponi_test_antigenico_rapido`: Cumulative number of molecular and antigen tests made;
+- `codice_nuts_1` and `codice_nuts_2`: Nomenclature of territorial units for the statistics of Italy.
+
+<br>
+
+#### Vaccination data
+
+```{r}
+vaccine <- as.data.frame(read_csv(
+  url("https://raw.githubusercontent.com/italia/covid19-opendata-vaccini/master/dati/somministrazioni-vaccini-latest.csv")))
+```
+    
+ _Source of the data:_
+    [https://raw.githubusercontent.com/italia/covid19-opendata-vaccini/master/dati/somministrazioni-vaccini-latest.csv]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Description: As the previous one, also the vaccine data set is a time based, precisely daily based, and gives information about the regional vaccine situation. It's mainly divided in two tipe of variables: the gender one and the number of administrations.    
+Additionally, it covers the period from the 27th December 2020 until today. Precisely the data set is always updated as the covid one.    
+This to make the best possible comparison with the covid data set and to have the most updated information.   
+The Vaccination data set is also the biggest among all the data sets of my research, containing 162.717 variables.
+
+</div> 
+
+<br>
+
+  I will focus only only on few of the variable contained in the data set: `data_somministrazione`, `fornitore`, `sesso_maschile`, `sesso_femminile`, `prima_dose`, `seconda_dose`, `nome_area`.    
+  
+  Variables description:
+
+- `data_somministrazione`: The daily date on which vaccinations may or may not have occurred;
+- `fornitore`: The different vaccine suppliers;
+- `area`: Abbreviation of the region name;
+- `fascia_anagrafica`: People divided by age group;
+- `sesso_maschile` and `sesso_femminile`: This column refers to the male and female gender;
+- `prima_dose`: Indicates the people who got the only the first dose of vaccine;
+- `seconda_dose`: As the previous column, is referring to people who made both the first and second dose of the vaccine;
+- `pregressa_infezione`: It shows people that were infected by the virus before getting vaccinated;
+- `dose_addizionale_booster`: Third dose (Will note be used in the analysis because the percentage and the incidence in the total vaccination number and in our analysis is not enough);
+- `codice_NUTS1` and `codice_NUTS2`: Nomenclature of territorial units for the statistics of Italy;
+- `codice_regione_ISTAT`: Region code given by ISTAT (Italian National Institute of Statistic);
+- `nome_area`: The nomenclature of every region.
+    
+**Note:** The column `area` is quite useless for the research but I will keep it to later change the various entries and put the name of the Italian areas in it.   
+
+<br>
+
+### Socio-Economic Indicators Datasets
+
+Following I will load some data set concerning variables that represent important socio-economic factors for the population of an high developed country as Italy.    
+Apparently these variables seem unrelated to the two previous ones but, in period of several social and economic crisis as the one we are living today, could represent some main indicators of the effects of this sort of events.
+
+<br>
+
+#### Population data
+
+```{r}
+population <- as.data.frame(
+  read_csv(here::here("data/Popolazione.csv")))
+```
+ 
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?data setCode=DCIS_POPRES1]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+This data set contains the number of people per Region in Italy updated at January 2021.    
+Here I decided to export only a specific part of the original data set. The original one contained also the data of every province of Italy, the distinction between male and female and different type of age class and marital status.    
+As they were irrelevant for my research, I decided to keep only the regional population and the total sum of all the other variables.
+
+</div> 
+
+<br>
+
+In this case I will focus only in 2 variables: `Territory` and `Value`.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Value`: Shows the total number of citizen per region.
+
+All the other variables represent only some identification codes or some "notes" that ISTAT (Italian National Institute of Statistic) put to recognize the year, the age class, the gender, the kind of data or the marital status.   
+Examples are `Gender` and `Demographic data type`. The first one refers to the gender type and the second one to the reference period, in this case both are the same for every row.
+ 
+<br>
+ 
+#### Education data
+
+```{r}
+education <- as.data.frame(
+  read_csv(here::here("data/Education.csv")))
+```
+
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?QueryId=26176&lang=en]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+The above data set refers to the various level of education amongst the population.It takes in consideration only people older than 15 years old (the minimum age necessary to start working in Italy) over the *2019* and *2020*.
+
+</div> 
+
+<br>
+
+Here I will take in consideration four main variables: `Territory`, `Gender`, `Highest level of education` and `Value`.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Data type`: It indicates the type of population by age we are taking in consideration. In this case is *population 15 years and over (thousands)* for every row so is useless to keep but, at the same time, is telling an important information, that the value will be in thousand. 
+- `Gender`: Refers to the gender type and the sum of them;
+- `Age class`: The age group of people, divided in "15 years and over" and "25-64 years". This refers to the fact that after you are 15 years old you can quit school and that, generally, people that finish a Master at university are 25.  
+- `Highest level of education`: Is the most important column with the value one and it refers to different levels of education of Italian citizens;
+- `TIME`: Indicate the year taken into account;
+- `Value`: Gives the number of people that for every type of educational level and gender among all the regions.
+
+All the variable I didn't mention are only identification codes or words referring to all the previous ones described.
+
+<br>
+
+#### Inequality data
+
+```{r}
+inequality <- as.data.frame(
+  read_csv(here::here("data/IndiceGini.csv")))
+```
+
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?QueryId=598#]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Inequality data set is a territory based dataset that refers to the Gini index value per region and area of Italy in **2018** (latest year available). 
+
+</div> 
+
+<br>
+
+In this case the only variables that results usefull for me are `Territory` and `Value`, as all the others are or identification codes or description of the data.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Value`: It shows the Gini value.
+
+**Note:** the Gini index is a measure of the distribution of income across a population developed by the Italian statistician Corrado Gini in 1912. 
+
+<br>
+
+#### Unemployment data
+
+```{r}
+unemployment <- as.data.frame(
+  read_csv(here::here("data/Unemployment.csv")))
+```
+
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?QueryId=25132]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Here there is the unemployment data set.    
+This one is a very important data set as it shows the unemployment rate in percentage per every region. Is a time based data set as it refers to the period from *2019* to *2020* and is quarterly based.    
+It's taking into account only people aged 15 years and over divided by gender.
+
+</div> 
+
+<br>
+
+The variables used from here are: `Territory`, `Gender`, `TIME` and `Value`.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Gender`: Referring to the gender type;
+- `TIME`: It shows the periods taken in consideration. As described previously is quarterly based so we can find the year and the different years quarter.
+- `Value`: Concerns the percentage of unemployed people.
+
+<br>
+
+#### Poverty data
+
+```{r}
+poverty <- as.data.frame(
+  read_csv(here::here("data/Poverty.csv")))
+```
+
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?QueryId=17944]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+This data set shows the individuals and households in absolute and relative poverty in 2020 among all the regions.
+
+</div> 
+
+<br>
+
+For this data set I will take in consideration these variable: `Territory`, `Data type` and `Value`.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Data type`: It refers to the type of subjects we are taking in consideration, if individuals or households and if in absolute or relative poverty;
+- `TIME`: Show the year taken in consideration;
+- `Value`: Give the percentage value of `Data type` variable.
+
+<br>
+
+#### Informational Channel data
+
+```{r}
+info <- as.data.frame(
+  read_csv(here::here("data/Information_Channel.csv")))
+```
+
+ _Source of the data:_
+    [http://dati.istat.it/Index.aspx?QueryId=24368&lang=en]
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Here there is the last data set used for the research.    
+The informational channel data set indicates how people in *2019* and *2020* were used to get informed.
+This will permit me to analyse if even the channel of information has change before and after the pandemic situation.
+
+</div> 
+
+<br>
+
+In this case I will use 5 main variables of the data set: `Territory`, `Data type`, `Measure`, `TIME` and `Value`.
+
+Variables description:
+
+- `Territory`: Indicates the region name;
+- `Data type`: Refers to the method people used to get informed;
+- `Measure`: Tells if the `Value` column represent a percentage or a if the value is expressed in thousands. Here I will keep only the thousands value to show the exact number of people;
+- `TIME`: The year taken into consideration;
+- `Value`: Number or percentage of people among all the regional population that are getting informed by the way described in `Data type`.
+
+<br>
+
+## Data Import, Cleaning and Wrangling 
+
+
+### Covid Data set
+
+<br>
+
+Here there is the Covid data cleaned and adjusted. Firstly I changed the name of all the remain column translating them from Italian to English.    
+Next, for this data set and also for all the other ones, I added a column of the areas of Italy assigning every region to the appropriate area. This because the country is institutionally divided not only by regions but also by 5 main areas: *North (split in East and West); Center and Mezzogiorno (split in South and Islands)*.
+
+<br>
+
+We can see the table of the **Pandemic Situation** below.
+
+```{r covid}
+
+covid <- select(covid, -2, -3, -(5:8), -10, -12, -14, -16, -17, -(20:30))
+
+covid <- covid %>%
+  dplyr::rename(
+    date = data, Region = denominazione_regione,
+    total_hospitalised = totale_ospedalizzati,
+    total_positives = totale_positivi,
+    new_positives = nuovi_positivi, deaths = deceduti,
+    total_cases = totale_casi, swabs = tamponi
+  ) %>%
+  mutate(area = case_when(
+    (Region == "Veneto") ~ "North-east", (Region == "Emilia-Romagna") ~ "North-east",
+    (Region == "P.A. Trento") ~ "North-east", (Region == "P.A. Bolzano") ~"North-east",
+    (Region == "Friuli Venezia Giulia") ~ "North-east",
+    (Region == "Lombardia") ~ "North-west", (Region == "Liguria") ~ "North-west",
+    (Region == "Piemonte") ~ "North-west", (Region == "Valle d'Aosta") ~ "North-west",
+    (Region == "Lazio") ~ "Center", (Region == "Marche") ~ "Center",
+    (Region == "Toscana") ~ "Center", (Region == "Umbria") ~ "Center",
+    (Region == "Abruzzo") ~ "South", (Region == "Basilicata") ~ "South",
+    (Region == "Calabria") ~ "South", (Region == "Molise") ~ "South",
+    (Region == "Campania") ~ "South", (Region == "Puglia") ~ "South",
+    (Region == "Sicilia") ~ "Islands", (Region == "Sardegna") ~ "Islands",
+  )) %>%
+  relocate(area, .after = Region) %>%
+  relocate(deaths, .after = total_cases)
+
+covid$date <- as.Date(covid$date)
+
+
+datatable(covid)
+```
+
+<br>
+
+### Vaccination Data set
+
+<br>
+
+As with the Covid data set, also in Vaccination I change all the name from the Italian to the English nomenclature. After that I used the existing column `area` to change the name of all entries to the institutional areas name.    
+Then I joined all the same date together as were still split by the `fascia_anagrafica` variable that I deleted.    
+After that I decided to create a new column representing all the people that are fully vaccinated, meaning people that completed the vaccination cycle.    
+I made this because people that got vaccinated with the Janssen vaccine are listed only in the `first_dose` column. Actually they are considered as fully vaccinated as this vaccine requires only one dose, instead of two, to complete the vaccination cycle.   
+So to show all the people that are fully protected by the potential of the vaccine, I created the `fully_vaccinated` variable that contains people that got one dose of Janssen and two doses of the other vaccines.
+
+<br>
+
+Following we can see the output table for the **Vaccination Rates**.
+
+```{r vaccine, message=FALSE, show_col_types = FALSE, include=FALSE}
+
+vaccine <- vaccine[-c(4, 9:13)] %>%
+  dplyr::rename(
+    date = data_somministrazione,
+    Region = nome_area, Supplier = fornitore, male = sesso_maschile,
+    female = sesso_femminile, first.dose = prima_dose, second.dose = seconda_dose
+  ) %>%
+  select(date, Supplier, Region, area, male:second.dose)
+
+
+vaccine$date <- as.Date(vaccine$date)
+
+unique(vaccine$area)
+
+vaccine <- vaccine %>%
+  mutate(area = ifelse(area %in% c("LAZ", "MAR", "TOS", "UMB"), "Center",
+    ifelse(area %in% c("VEN", "EMR", "PAT", "PAB", "FVG"), "North-east", ifelse(area %in% c("LOM", "LIG", "VDA", "PIE"),
+      "North-west", ifelse(area %in% c("SIC", "SAR"), "Islands", "South")
+    ))
+  ))
+
+vaccine <- vaccine %>%
+  group_by(date, Supplier, Region, area) %>%
+  summarise(
+    male = sum(male), female = sum(female), first.dose = sum(first.dose),
+    second.dose = sum(second.dose)
+  )
+
+vaccine <- vaccine %>%
+  mutate(full.vacc = sum(ifelse(Supplier == "Janssen",
+    first.dose, second.dose
+  )))
+vaccine$Region[vaccine$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+vaccine$Region[vaccine$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+vaccine$Region[vaccine$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+# I separated the bottom chunk because the codes used above are generating an uneeded output that we are not able to hide with any code besides include = FALSE
+```
+
+```{r}
+
+datatable(vaccine)
+```
+
+**Note:** In the end I also adapted the name of the regions to the ones that are in the covid data set to have the same kind of variables.
+
+<br>
+
+### Population Data set
+
+<br>
+
+This data set contains data about the number of citizens at January 2021 and is divided by region and area.   
+This data set will be very useful to have a comparison between all the other variables and the total population (Ex: % of vaccinated people among the population).
+
+<br>
+
+Here will follow the output table regarding the **Regional Population of Italy**.
+
+```{r population}
+
+population <- population %>% 
+  rename(Region = Territory) %>%
+  select(-c(1, 3:12, 14, 15))
+
+population$Region[population$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+population$Region[population$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+population$Region[population$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+population <- population %>%
+  left_join(vaccine[, c("Region", "area")], by = "Region") %>%
+  distinct(Region, Value, area) %>%
+  relocate(area, .after = Region)
+
+
+datatable(population)
+```
+
+<br>
+
+### Education Data set
+
+<br>
+
+Here are contained some values concerning educational data as the education level, the gender type both divided by regions and areas.   
+I chose to keep only the *2020* data as the covid data set start from February 2020.    
+Also, for the `Age class` variable, I chose to keep only people that are 15 years and over excluding the 25-64 years old group of people, to avoid to omit people that start to work before 25 and stopped after 64 years.   
+Finally I create a column for the different type of gender and a column with the areas name correctly assigned for every region.
+
+<br>
+
+Following will be the output table for the **Regional number of people divided by Level of Education**.
+
+```{r education}
+
+education <- education[, -1] %>%
+  filter(
+    `Age class` == "15 years and over", Gender != "total",
+    TIME == 2020, `Highest level of education attained` != "total"
+  ) %>%
+  select(-c(
+    `Data type`, TIPO_DATO_FOL, SEXISTAT1, ETA1, `Age class`, TITOLO_STUDIO, CITTADINANZA, Citizenship,
+    TIME, `Select time`, `Flag Codes`, Flags
+  )) %>%
+  rename(Region = Territory, `Education Level` = `Highest level of education attained`) %>%
+  mutate(Value = Value * 1000)
+
+
+education <- education %>%
+  filter(Region != "Trentino Alto Adige / Südtirol") %>%
+  pivot_wider(names_from = Gender, values_from = Value) %>%
+  mutate(Total = males + females)
+
+education$Region[education$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+education$Region[education$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+education$Region[education$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+education <- education %>%
+  left_join(vaccine[, c("Region", "area")], by = "Region") %>%
+  distinct(Region, `Education Level`, males, females, Total, area) %>%
+  relocate(area, .after = Region)
+
+datatable(education)
+```
+
+**Note:** Also here I adjusted the name of the regions made them the same there are in the Covid data set. That as been made for every data set that will follow.
+
+<br>
+
+### Inequality Data set
+
+<br>
+
+For this data set I started by choosing only subject with an included imputed rents and filter for the 21 regions of interest.    
+After that I added an area column and the result is a data set with that shows the Gini index in 2018 for every region of Italy.
+
+<br>
+
+Will follow the table about **Regional Gini index in 2018**.
+
+```{r inequality}
+
+inequality <- inequality %>%
+  select(Territory, `Including or not including imputed rents`, Value)
+
+inequality <- inequality %>%
+  filter(`Including or not including imputed rents` == "including imputed rents") %>%
+  select(-`Including or not including imputed rents`) %>%
+  filter(Territory %in% c(
+    "Piemonte", "Valle d'Aosta / Vallée d'Aoste", "Liguria",
+    "Lombardia",
+    "Provincia Autonoma Bolzano / Bozen", "Provincia Autonoma Trento", "Veneto",
+    "Friuli-Venezia Giulia", "Emilia-Romagna",
+    "Toscana", "Umbria", "Marche", "Lazio",
+    "Abruzzo", "Molise", "Campania", "Puglia", "Basilicata", "Calabria",
+    "Sicilia", "Sardegna"
+  )) %>%
+  rename(Region = Territory) 
+  
+
+inequality$Region[inequality$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+inequality$Region[inequality$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+inequality$Region[inequality$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+inequality <- inequality %>%
+  left_join(vaccine[, c("Region", "area")], by = "Region") %>%
+  distinct(Region, Value, area) %>%
+  relocate(area, .after = Region)
+
+datatable(inequality)
+```
+
+<br>
+
+### Unemployment Data set
+
+<br>
+
+This data set highlights the quarterly unemployment rate per region in Italy from 31 March 2019 to 31 December 2020. As for the previous data set, here I decide to keep only the people in the age group of "15 years and over", due to reasons mentioned before.     
+Also in this case I created 3 different genders column and an area one.
+
+<br>
+
+Below is shown the table regarding  **Regional Unemployment rate between 2019 and 2020**.
+
+```{r unemployment}
+
+unemployment <- unemployment %>%
+  filter(
+    `Age class` == "15 years and over", Territory %in% c(
+      "Piemonte",
+      "Valle d'Aosta / Vallée d'Aoste", "Liguria",
+      "Lombardia",
+      "Provincia Autonoma Bolzano / Bozen", "Provincia Autonoma Trento", "Veneto",
+      "Friuli-Venezia Giulia", "Emilia-Romagna",
+      "Toscana", "Umbria", "Marche", "Lazio",
+      "Abruzzo", "Molise", "Campania", "Puglia", "Basilicata", "Calabria",
+      "Sicilia", "Sardegna"
+    ),
+    TIME != 2019, TIME != 2020
+  ) %>%
+  select(`Select time`, Territory, Gender, Value)
+
+
+unemployment <- unemployment %>%
+  pivot_wider(names_from = Gender, values_from = Value) %>%
+  rename(Region = Territory)
+
+
+unemployment$`Select time` <- last_of_yq(as.yearqtr(unemployment$`Select time`,
+  format = "Q%q-%Y"
+), q = NULL)
+colnames(unemployment)[1] <- "date"
+
+unemployment$Region[unemployment$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+unemployment$Region[unemployment$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+unemployment$Region[unemployment$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+unemployment <- unemployment %>%
+  left_join(vaccine[, c("Region", "area")], by = "Region") %>%
+  distinct(date, Region, males, females, total, area) %>%
+  relocate(area, .after = Region)
+
+datatable(unemployment)
+```
+
+<br>
+
+### Poverty Data set
+
+<br>
+
+This is an area based data set that shows the absolute poverty incidence by area of households and individuals.   
+Here I created two columns regarding the variables mentioned above eliminating all the unnecessary entries.
+
+<br>
+
+Following the table about **Individuals and Households absolute Poverty incidence**.
+
+```{r poverty}
+
+poverty <- poverty %>%
+  rename(area = Territory, Year = TIME) %>%
+  filter(`Data type` == "household relative poverty incidence (% of households in relative poverty)" |
+    `Data type` == "individual relative poverty incidence (% of persons living in households in relative poverty)") %>%
+  filter(area %in% c("Nord-ovest", "Nord-est", "Centro (I)", "Sud", "Isole")) %>%
+  select(area, `Data type`, Value)
+
+poverty <- poverty %>%
+  mutate(area = ifelse(area == "Centro (I)", "Center", ifelse(area == "Sud",
+    "South", ifelse(area == "Isole", "Islands", ifelse(area == "Nord-est", "North-east", "North-west"))
+  ))) %>%
+  pivot_wider(
+    names_from = `Data type`, values_from =
+      Value
+  ) %>%
+  rename(
+    Individual = "individual relative poverty incidence (% of persons living in households in relative poverty)",
+    Household = "household relative poverty incidence (% of households in relative poverty)"
+  )
+datatable(poverty)
+```
+
+<br>
+
+### Info Channel Data set
+
+<br>
+
+In this data is shown the type of informational channel people used in 2019 and 2020.    
+I kept only the `Region` entries that I needed and I multiplied the `Value` entries given to me in the beginning by *1000* to show the real number of people.    
+After that I created two column for every year taken into consideration with the value  divided by region and type of informational channel.    
+In the end I created als here variable for the areas of Italy.
+
+<br>
+
+The succeeding table will be about **Different type of Informational channel used by people in 2019 and 2020**.
+
+```{r info}
+
+info <- info %>% 
+  select(-c(1, 3, 5, 8, 10, 11)) %>%
+  rename(Region = Territory) %>%
+  filter((!(Region %in% c(
+    "Nord", "Nord-est", "Nord-ovest", "Mezzogiorno", "Centro (I)", "Isole",
+    "Sud", "metropolitan area - suburbs", "metropolitan area - centre", "Italy",
+    "until 2,000 inhab.", "10,001 - 50,000 inhab.", "50,001 inhab. and over",
+    "2,001 - 10,000 inhab."
+  ))), Measure == "thousands value") %>%
+  mutate(Value = Value * 1000) %>%
+  select(-c(3))
+
+info <- info %>%
+  pivot_wider(
+    names_from = TIME, values_from =
+      Value
+  ) %>%
+  filter(Region != "Trentino Alto Adige / Südtirol")
+
+info$Region[info$Region == "Provincia Autonoma Bolzano / Bozen"] <- "P.A. Bolzano"
+info$Region[info$Region == "Provincia Autonoma Trento"] <- "P.A. Trento"
+info$Region[info$Region == "Valle d'Aosta / Vallée d'Aoste"] <- "Valle d'Aosta"
+
+info <- info %>%
+  left_join(vaccine[, c("Region", "area")], by = "Region") %>%
+  distinct(Region, `Data type`, `2019`, `2020`, area) %>%
+  relocate(area, .after = Region)
+
+datatable(info)
+```
+
+<br>
+
+## Data Standardization
+
+<br>
+
+Here I grouped all of the data set together and displayed only the regions in order to make sure I have the exact same region names across all my data tables.    
+I've done this as the region and area variable will be the main ones that will permit me to join all the data set together.
+
+<br>
+
+The following table shows the regions of different data table
+
+```{r}
+datatable(data.frame(
+  unique((
+    vaccine %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(vacc = Region) )),
+  unique((
+    covid %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(cov = Region))),
+  unique((
+    education %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(edu = Region))),
+  unique((
+    info %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(info = Region))),
+  unique((
+    inequality %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(ineq = Region) )),
+  unique((
+    unemployment %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(unemp = Region))),
+  unique((
+    population %>% ungroup() %>% select(Region) %>% arrange(Region) %>% rename(pop = Region) ))
+))
+```
+
+The only difference that merge is the name of `Friuli Venezia Giulia` region between the Covid data table and the others that I will adjust in the following table.
+
+```{r}
+covid <- covid %>%
+  mutate(Region =
+        ifelse(
+          Region == "Friuli Venezia Giulia",
+          "Friuli-Venezia Giulia",
+          covid$Region
+        )
+  )
+
+unique(covid$Region)
+```
+
+Regarding areas, I have manually added the area names for every data table so I'm  certain that they are standardized.
+
+

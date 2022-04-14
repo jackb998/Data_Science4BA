@@ -1,0 +1,35 @@
+# Conclusion
+
+## Main Conclusions
+
+Vaccine and Covid Cases:   
+1- Vaccination rates and Covid cases are generally negatively correlated;   
+2- Looking at different regions we see less clear relationships than in areas;   
+3- Hospitalisations and positives cases, deaths , swabs all have a positive relationship across different regions and areas;   
+4- Female and male Covid cases as well as first dose vaccination and full vaccination also seem to correlate positively across and area.
+
+Socio-Economic Factors:   
+1- Clear visual evidence showing that as of end of 2020 areas and regions with lower employment, more inequality , lower degree of higher education etc., have lower vaccination rates but not necessarily more covid cases.    
+
+Factors affecting vaccination:   
+1- I can conclude that socio-economic factors promote higher vaccination rates in every regions population more so in areas;   
+2- Geography is clearly a major factor in the spread of Covid as correlations within areas across regions are stronger than in between regions of different areas;   
+3- Daily positive cases is not a major driver of daily vaccination as it seems that other variables come into play that push people to get their first dose.
+
+<br>
+
+## Limitations
+
+During my work I encountered some limit at the project:    
+-  The difference between cumulative and daily values in our time series made it difficult to properly compare some variable (alot of computational effort to transform all the data);    
+-  Lack of time series available for socio-economic indicators. Comparing one point in time for these indicators with vaccination and covid cases.
+
+<br>
+
+## Future Work
+
+Thinking about some advice and input to give for future work related to my project they could be:   
+-  Adding other datasets related to anti-vaxing activities, political support for vaccine within regions and other social indicators to check the push for vaccination;   
+-  Looking at weekly aggregated values and checking the quantitative relationship;   
+-  Type of vaccine and effect on vaccination rate.
+

@@ -1,0 +1,656 @@
+# Analysis
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+## Visual Analysis: Covid Impact and Vaccination 
+
+In this part of the the analysis I will answer the first research question:       
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**What is the ongoing state of pandemic situation and the vaccination campaign in Italy? What is happening at a regional or Area level? Are there any differences between the 21 regions or the 5 Areas?**     
+   
+</div>
+
+This question was yet widely analysed in the *eda* section. We saw how covid had spread differently between all the regions, and how the ongoing vaccination is proceeding in a very similar way all over Italy.   
+Here I will try to look how the two main variables of my research could have impact society and government in looking at the national health system.
+
+
+### Covid Impact over the time in a Macro level perspective
+
+
+The below interactive graph will show the timeline comparison between the trend of **current positives** compared to **current inpatients**.
+
+```{r}
+
+tags$div(style="width: 100%; height: 3.8in",
+ggplotly(ggplot(
+  covid %>% group_by(date) %>% summarise(hos = sum(total_hospitalised),
+                                                    pos = sum(total_positives))) + 
+    geom_area(aes(date, hos, color = "Hospitalised",
+                 fill = 'lightred'), alpha=0.6) +
+   geom_area(aes(date, pos, color = "Positives",
+                 fill = 'lightblue'), alpha=0.3) +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))+
+   ggtitle("Actual Hospitalized and Positive Cases")+xlab("Date")+ylab("Number of People")+
+    scale_color_manual(values = brewer.pal(4, "Set1"))+
+   scale_color_discrete(name="")+
+   scale_fill_discrete(name = "")
+  ))
+```
+
+<br>
+
+**Analysis**: The `total_positives` represent people that were tested positives and still remain at the current date. This number will so increase due to new people tested positives, and decrease due to people that are not positive anymore.   
+The same is for `total_hospitalised` that represent people that are currently inpatients.   
+Here we can see how the two trends tend be very similar to each other.     
+I have to highlight that *total hospitalised* people are a little bit translated compared to *total positives* as there is a lack of some days in which a person become positives, they maybe start to feel the symptoms and than then, eventually, goes to the hospital.   
+Anyway, knowing this, we can see how the number of inpatients is following the same trend of new cases.    
+   
+This help us to understand that covid is really affecting the health system of Italy, clogging hospitals with new patients.
+
+
+### Actual Potives and Hospitalised Analysis {.tabset .tabset-pills}
+
+Here I will take the same variables taken in the previous graph but looking on an **area** and **region** perspective. (*Important: look at different notes for every table*)
+
+
+#### Area Level Covid Impact {-}
+
+```{r, fig.width=9, fig.height=4}
+
+ggplot(
+  covid %>% mutate(month = format(as.Date(date), "%Y-%m")) %>%
+          group_by(month, area) %>% summarise(pos = sum(total_positives)), aes(month, area)) + 
+  geom_tile(aes(fill = pos), na.rm = TRUE) +
+  scale_fill_continuous(low = "#d8e1cf" , high = "#438484",labels = comma) +  
+  guides(fill=guide_legend(title="# of Cases", keywidth = 0.5)) +
+  theme_bw() + theme_minimal() + 
+  labs(title = "Actual Number of Positive Cases",
+       x = "Date", y = "Area") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.x =element_text(size=6, angle = 90, vjust = 0.5, hjust=1),
+        axis.ticks = element_line(linetype = 8), legend.text = element_text(size = 5),
+        legend.title =  element_text(size=7))+
+  
+ggplot(covid %>% mutate(month = format(as.Date(date), "%Y-%m")) %>%
+          group_by(month, area) %>% summarise(hos = sum(total_hospitalised)), aes(month, area)) + 
+   geom_tile(aes(fill = hos), na.rm = TRUE) +
+  scale_fill_continuous(low = "#d8e1cf" , high = "#438484",labels = comma) +  
+  guides(fill=guide_legend(title="# of Cases", keywidth = 0.5)) +
+  theme_bw() + theme_minimal() + 
+  labs(title = "Actual Number of Hospitalised People",
+       x = "Date") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.x =element_text(size=6, angle = 90, vjust = 0.5, hjust=1),
+        axis.ticks.x = element_line(linetype = 8), legend.text = element_text(size = 5),
+        legend.title =  element_text(size=7), axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+**Analysis**: Is quite clear looking at the graph that the covid-19 current cases followed the same trend in all the areas, but more consistently in *South*, *North-west* and *North-east*.   
+Opposite we can see also that the same trend was obviously followed by the number of hospitalised people, but is quite clear how North west was the moste afffected area of the country.
+
+
+#### Region Level Covid Impact 
+
+```{r, fig.width=9, fig.height=4}
+
+ggplot(covid %>% mutate(month = format(as.Date(date), "%Y-%m")) %>%
+          group_by(month, Region) %>% summarise(pos = sum(total_positives)), aes(month, Region)) + 
+  geom_tile(aes(fill = pos), na.rm = TRUE) +
+  scale_fill_continuous(low = "#d8e1cf" , high = "#438484",labels = comma) +  
+  guides(fill=guide_legend(title="# of Cases", keywidth = 0.5)) +
+  theme_bw() + theme_minimal() + 
+  labs(title = "Actual Number of Positive Cases",
+       x = "Date", y = "Region") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.x =element_text(size=6, angle = 90, vjust = 0.5, hjust=1),
+        axis.ticks = element_line(linetype = 8), legend.text = element_text(size = 5),
+        legend.title =  element_text(size=7))+
+  
+ggplot(covid %>% mutate(month = format(as.Date(date), "%Y-%m")) %>%
+          group_by(month, Region) %>% summarise(hos = sum(total_hospitalised)), aes(month, Region)) + 
+   geom_tile(aes(fill = hos), na.rm = TRUE) +
+  scale_fill_continuous(low = "#d8e1cf" , high = "#438484",labels = comma) +  
+  guides(fill=guide_legend(title="# of Cases", keywidth = 0.5)) +
+  theme_bw() + theme_minimal() + 
+  labs(title = "Actual Number of Hospitalized People",
+       x = "Date") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.x =element_text(size=6, angle = 90, vjust = 0.5, hjust=1),
+        axis.ticks.x = element_line(linetype = 8), legend.text = element_text(size = 5),
+        legend.title =  element_text(size=7), axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+**Analysis**: Switching  to a regional level, we can notice the same exact situation of before.   
+Region of *Lombardia*, *Lazio*, *Emilia-Romagna*, *Campamnia* and *Veneto* are the affected by the covid disease, but the one that seems to be had the worst consequences is *Lombardia*. Looking deeply we can also see how *Piemonte* had more hospitalised people than other region with bighest covid impact as *Veneto* and *Campania*.   
+
+
+### {-}
+
+
+This correlations plots highlight how covid is strictly related to inpatients cases and is having a similar but, at the same time, different effect for each region and area of Italy.    
+  
+Even if this is not part of my research, I think the answer for this could be found in looking how the sanitary system is regulated and was managed in the past years in every regions. 
+
+
+## Visual Analysis: Socio-Economic Indicators
+
+In this part of the the analysis I will answer the first research question:    
+   
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+   
+**Do socio-economic factors affect or relate to the impact of Covid across different areas or regions ?**   
+   
+</div>   
+   
+Here I will try to find a more strictly correlation between the covid and vaccine variables and all the other ones by plotting some specific graphs.
+
+### Indicators by Region
+
+
+In the graph below are represented the *Average unemployment*, *Inequality*, *University level* and *Vaccination* variables in percentage of the total population and divided by region.
+
+
+```{r}
+
+tags$div(style="width: 100%; height: 4in",
+ggplotly(
+  ggplot(Region.ind %>% select(Region,Avg.unmpl, Vaccination, Univ.level, inequality) %>%
+         pivot_longer(cols = c(Avg.unmpl,Vaccination,Univ.level,inequality),
+                                   names_to = 'Indicator', values_to = 'value'),
+       aes(fill=Indicator, y=value, x=Region)) + 
+    geom_bar(position="dodge", stat="identity")+
+  ylab("Value (%)")+ ggtitle("Socio-Economic Indicators Across Regions")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+))
+```
+
+<br>
+
+**Analysis**: Here I was able to see something very important. It seems that mainly the university level of education and the inequality index are very correlated to the vaccinated number of people.    
+In some regions as *Toscana*, *P.A. Bolzano*, *P.A. Trento*, *Campania*, *Calabria* and *Sicilia*, is visible how much to a high level of inequality and low level of  high education correspond a low number of vaccination.   
+This could be explained in may ways, firstly knowledge that comes from education may help people to understand why is better to get vaccinated. Secondly, an high level of inequality among the population tend to move citizens against government rules and impositions.   
+After we can also see that regions with high level of unemployment are the same that are struggling with the vaccination campaign.   
+In this an explanation could be that nowadays government has imposed a rule for which if you want to go to work you may have a daily swab or had been vaccinated. That led some of the work part of Italian population that was unsure before, to get vaccinated, mainly to avoid the cost and the effort of get a daily test.   
+So in that regions with high unemployment rate this obligation is felt less among the citizens.
+
+Now we can clearly understand why, even if the government is managing the vaccination in a centralized way, there is still some differences between regions.
+
+
+
+### Scaled Indicators by Area
+
+Here is a graph that shows the indicators mentioned before plus *Swabs*, *House Poverty Rate*, *Covid Deaths* and *Total Covid Cases* related to each other but in a scaled way.     
+
+
+```{r, fig.width=7, fig.height=4}
+Area.rad <- Area.ind %>% select(area, House.Pov.Rate, inequality, Vaccination, Avg.unmpl, Univ.level, total_cases, deaths, swabs )
+
+rownames(Area.rad) <- Area.rad[,1]
+
+Area.rad <- Area.rad[,-1]
+
+
+radarchart( Area.rad , axistype=0 , maxmin = F, 
+ 
+    #custom polygon
+    pcol=brewer.pal(5, "Spectral") , pfcol=alpha(brewer.pal(5, "Spectral"),0.3), plwd=2 , plty=1, 
+ 
+    #custom the grid
+    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,50,10), cglwd=0.8,
+ 
+    #custom labels
+    vlcex=0.8, title="Socio-Eco Indicators in Different Areas"
+    )
+legend(x=-2.75, y=0.5, legend = rownames(Area.rad), bty = "n", pch=20 , col=alpha(brewer.pal(5, "Spectral"),0.3) ,  cex=1, pt.cex=2)
+```
+
+In this case we can se how different areas are correlated to different variables.   
+This graph is scaled so, for example, will not show the really amount of vaccinated as it's much bigger than all the other variable numbers.     
+Anyway we can see in another way what is the wight of the different variable in every region.   
+I made this one because number of swabs and deaths are respectively too high and low to be shown in non-scaled graph, and this could maybe led to a confusion on the reader.
+
+
+### Unsclaed Indicators by Area
+
+
+This interactive graph shows indicators as *Vaccination Rate*, *House Poverty Rate*, *University Graduated People*, *Average Unemployment*, *Inequality Index* and *Total Covid Cases* related to each other in a non-scaled way. 
+
+```{r}
+ 
+Area.rad <- Area.ind %>% select(area, House.Pov.Rate, inequality, Vaccination, Avg.unmpl, Univ.level, total_cases) %>%
+  pivot_longer(cols = c(House.Pov.Rate:total_cases), names_to = "Indicator", values_to = "Value") %>%
+  pivot_wider(names_from = area, values_from = Value)
+
+tags$div(style="width: 100%; height: 5in", 
+
+plot_ly(  type = 'scatterpolar',mode = "markers",  fill = 'toself' ) %>%
+
+  add_trace(r =  Area.rad$`North-west` ,theta = Area.rad$Indicator,name = 'North-West' )%>%
+
+  add_trace( r =  Area.rad$`North-east` , theta = Area.rad$Indicator,  name = 'North-East')  %>%
+  add_trace( r =  Area.rad$Center ,theta = Area.rad$Indicator, name = 'Center')  %>%
+
+  add_trace( r =  Area.rad$Islands , theta = Area.rad$Indicator, name = 'Islands' )  %>%
+  add_trace(  r =  Area.rad$South, theta = Area.rad$Indicator, name = 'South')  %>%
+
+  layout(polar = list(radialaxis = list( visible = T, range = c(0,80)) )) 
+)
+
+```
+
+As the graph shown before, this will permit me to have another close look to all the variable relation.   
+As here the indicators are non-scaled, we can see the exact percentage amount for each of them for a more precise look at the global situation.
+
+
+## Quantitative Analysis: Covid and Vaccination
+
+
+In this part of the the analysis I will answer the first research question:
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Given all the data set, what are the main drivers of vaccination: Is death rate and covid cases, or more related to socio-economic factors in different regions?**
+
+</div>
+
+What I want to do hear is analyse which is the main variable led people to take the decision of getting vaccinated.
+
+<br>
+
+### Regional Correlations {.tabset .tabset-pills}
+
+<br>
+
+Here I took  the `new_positives` and `first.dose` variables too analyse them in a region perspective. (*Important: look at different notes for every table*) 
+
+#### Correlartion of New positive Cases {-}
+
+Here I will look at the **regional correlation of new covid cases**.
+
+
+```{r}
+corrplot(cor(covid %>% group_by(date, Region, area) %>%  
+               summarise(value = sum(new_positives)) %>% 
+               arrange(date, area) %>% select(-area) %>% ungroup()%>%
+  pivot_wider(names_from = Region, values_from = value) %>% select(-date)),
+method = "color",
+order = "original",
+tl.cex = 0.5
+)
+```
+
+**Analysis**: Here I can see high correlation among all regions but weakness in correlation are the islands (*Sicilia* and *Sardegna*) and the region of *Valle d'Aosta*.   
+The reason for this could be the geographic location and conformation of the territory, as the islands are detached from the rest of the peninsula and *Valle d'Aosta* t is a mountainous territory with low population density.
+
+#### Correlartion of First Dose Vaccination {-}
+
+Here I will look at the **regional correlation of new first vaccine doses delivered**.
+
+**Note:** I decided to take in consideration only the first dose of vaccine as that's enough to understand the willingness of getting vaccinated among the population
+
+```{r}
+corrplot(cor(vaccine %>% group_by(date, Region, area) %>%  
+               summarise(value = sum(first.dose)) %>% 
+               arrange(date, area) %>% select(-area) %>% ungroup()%>%
+  pivot_wider(names_from = Region, values_from = value) %>% select(-date), use="complete.obs"),
+method = "color",
+order = "original",
+tl.cex = 0.5
+)
+
+```
+
+**Analysis**: As seen in the eda maps chart, the Region of Trentino-alto Adige (the union of *P.A. Bolzano* and *P.A. Trento*) is the one that is struggling the most withe the vaccination campaign. Here the heat-map highlight how this is true also for the first dose of vaccine.
+ 
+### {-}
+
+### Regional Charts {.tabset}
+
+<br>    
+
+In the interactive graphs below I decided to show a time series of the `new positives`, `1 dose vaccine` and `cumulative_cases` variables but at a regional level. This will help to gave a more specific overview of the situation regarding **Covid** and **vaccine**.    
+Looking at the graph, the `Tot.Cov` variable indicate the total number of covid cases but divided by *10*. I made this in order to show better the comparison between the different variables and to give a better look at the graphs (*Important: look at different notes for every table*).
+
+#### North-West {-}
+
+```{r}
+
+tags$div(style="width: 100%; height: 4.5in",
+plot_ly(Region.ts %>% ungroup() %>% arrange(date) %>% mutate(cases = cases/10)%>%
+          select(date, Region, vacc.1d,positives, cases) %>% pivot_wider(names_from = "Region",
+                      values_from = c("vacc.1d", "positives", "cases")), x=~date ) %>% 
+  
+    add_lines(x= ~date, y = ~vacc.1d_Liguria, name = "Liguria.Vac", visible = T)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Lombardia, name = "Lombardia.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Piemonte, name = "Piemonte.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~`vacc.1d_Valle d'Aosta`, name = "Valle d'Aosta.Vac", visible =  F)%>%
+    add_lines(x= ~date, y = ~positives_Liguria, name = "Liguria.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~positives_Lombardia, name = "Lombardia.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Piemonte, name = "Piemonte.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`positives_Valle d'Aosta`, name = "Valle d'Aosta.Cov", visible =  F)%>%
+    add_lines(x= ~date, y = ~cases_Liguria, name = "Liguria.Tot.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~cases_Lombardia, name = "Lombardia.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Piemonte, name = "Piemonte.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`cases_Valle d'Aosta`, name = "Valle d'Aosta.Tot.Cov", visible =  F)%>%
+  layout( 
+  title = "North-West Regions",  
+  yaxis = list(title = " Number of People"),  xaxis = list(title = "Date"),
+  updatemenus = list(list( x=1.5, y = 0.6,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F)),  label = "Liguria.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Lombardia.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Piemonte.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Valle d'Aosta.Vac")
+   )),
+   list( x=1.5, y = 0.5,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F)),  label = "Liguria.Cov"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Lombardia.Cov"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Piemonte.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Valle d'Aosta.Cov")
+   )),
+   (list( x=1.5, y = 0.4,  buttons = list( 
+      list(method = "restyle", args = list("visible", list(T,F,F,F)), label = "Liguria.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Lombardia.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Piemonte.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Valle d'Aosta.Tot.Cov")))
+   )))
+)
+
+```
+
+#### North-East {-}
+
+```{r}
+
+tags$div(style="width: 100%; height: 4.5in",
+plot_ly(Region.ts %>% ungroup() %>% arrange(date) %>% mutate(cases = cases/10)%>%
+          select(date, Region, vacc.1d,positives, cases) %>% pivot_wider(names_from = "Region",
+                      values_from = c("vacc.1d", "positives", "cases")), x=~date ) %>% 
+  
+      add_lines(x= ~date, y = ~`vacc.1d_Emilia-Romagna`, name = "Emilia-Romagna.Vac", visible = T)%>%
+  add_lines(x= ~date, y = ~`vacc.1d_Friuli-Venezia Giulia`, name = "Friuli-Venezia Giulia.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~`vacc.1d_P.A. Bolzano`, name = "P.A. Bolzano.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~`vacc.1d_P.A. Trento`, name = "P.A. Trento.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Veneto, name = "Veneto.Vac", visible =  F)%>%
+     add_lines(x= ~date, y = ~`positives_Emilia-Romagna`, name = "Emilia-Romagna.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~`positives_Friuli-Venezia Giulia`, name = "Friuli-Venezia Giulia.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`positives_P.A. Bolzano`, name = "P.A. Bolzano.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`positives_P.A. Trento`, name = "P.A. Trento.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Veneto, name = "Veneto.Cov", visible =  F)%>%
+      add_lines(x= ~date, y = ~`cases_Emilia-Romagna`, name = "Emilia-Romagna.Tot.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~`cases_Friuli-Venezia Giulia`, name = "Friuli-Venezia Giulia.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`cases_P.A. Bolzano`, name = "P.A. Bolzano.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~`cases_P.A. Trento`, name = "P.A. Trento.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Veneto, name = "Veneto.Tot.Cov", visible =  F)%>%
+  layout(
+  title = "North-east Regions",  
+  yaxis = list(title = " Number of People"),  xaxis = list(title = "Date"),
+  updatemenus = list(list( x=1.5, y = 0.6,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F,F)),  label = "Emilia-Romagna.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F)), label = "Friuli-Venezia Giulia.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F)), label = "P.A. Bolzano.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F)), label = "P.A. Trento.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T)), label = "Veneto.Vac")
+   )),
+   list( x=1.5, y = 0.5,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F,F)),  label = "Emilia-Romagna.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F)), label = "Friuli-Venezia Giulia.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F)), label = "P.A. Bolzano.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F)), label = "P.A. Trento.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T)), label = "Veneto.Vac")
+   )),
+   (list( x=1.5, y = 0.4,  buttons = list( 
+      list(method = "restyle", args = list("visible", list(T,F,F,F,F)),  label = "Emilia-Romagna.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F)), label = "Friuli-Venezia Giulia.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F)), label = "P.A. Bolzano.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F)), label = "P.A. Trento.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T)), label = "Veneto.Vac")))
+     )))
+)
+```
+
+#### Center {-}
+
+```{r}
+
+tags$div(style="width: 100%; height: 4.5in",
+plot_ly(Region.ts %>% ungroup() %>% arrange(date) %>% mutate(cases = cases/10)%>%
+          select(date, Region, vacc.1d,positives, cases) %>% pivot_wider(names_from = "Region",
+                      values_from = c("vacc.1d", "positives", "cases")), x=~date ) %>% 
+  
+    add_lines(x= ~date, y = ~vacc.1d_Lazio, name = "Lazio.Vac", visible = T)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Marche, name = "Marche.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Toscana, name = "Toscana.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Umbria, name = "Umbria.Vac", visible =  F)%>%
+    add_lines(x= ~date, y = ~positives_Lazio, name = "Lazio.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~positives_Marche, name = "Marche.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Toscana, name = "Toscana.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Umbria, name = "Umbria.Cov", visible =  F)%>%
+    add_lines(x= ~date, y = ~cases_Lazio, name = "Lazio.Tot.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~cases_Marche, name = "Marche.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Toscana, name = "Toscana.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Umbria, name = "Umbria.Tot.Cov", visible =  F)%>%
+  layout(
+  title = "Center Regions",  
+  yaxis = list(title = " Number of People"),  xaxis = list(title = "Date"),
+  updatemenus = list(list( x=1.5, y = 0.6,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F)),  label = "Lazio.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Marche.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Toscana.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Umbria.Vac")
+   )),
+   list( x=1.5, y = 0.5,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F)),  label = "Lazio.Cov"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Marche.Cov"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Toscana.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Umbria.Cov")
+   )),
+   (list( x=1.5, y = 0.4,  buttons = list( 
+      list(method = "restyle", args = list("visible", list(T,F,F,F)), label = "Lazio.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F)), label = "Marche.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,T,F)), label = "Toscana.Tot.Cov"),
+    list(method = "restyle", args = list("visible", list(F,F,F,T)), label = "Umbria.Tot.Cov")))
+   )))
+)
+
+```
+
+#### South {-}
+
+```{r}
+
+tags$div(style="width: 100%; height: 4.5in",
+plot_ly(Region.ts %>% ungroup() %>% arrange(date) %>% mutate(cases = cases/10)%>%
+          select(date, Region, vacc.1d,positives, cases) %>% pivot_wider(names_from = "Region",
+                      values_from = c("vacc.1d", "positives", "cases")), x=~date ) %>% 
+  
+        add_lines(x= ~date, y = ~vacc.1d_Abruzzo, name = "Abruzzo.Vac", visible = T)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Basilicata, name = "Basilicata.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Calabria, name = "Calabria.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Campania, name = "Campania.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Molise, name = "Molise.Vac", visible =  F)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Puglia, name = "Puglia.Vac", visible =  F)%>%
+    add_lines(x= ~date, y = ~positives_Abruzzo, name = "Abruzzo.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~positives_Basilicata, name = "Basilicata.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Calabria, name = "Calabria.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Campania, name = "Campania.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~positives_Molise, name = "Molise.Cov", visible =  F)%>%
+   add_lines(x= ~date, y = ~positives_Puglia, name = "Puglia.Vac", visible =  F)%>%
+    add_lines(x= ~date, y = ~cases_Abruzzo, name = "Abruzzo.Tot.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~cases_Basilicata, name = "Basilicata.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Calabria, name = "Calabria.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Campania, name = "Campania.Tot.Cov", visible =  F)%>%
+  add_lines(x= ~date, y = ~cases_Molise, name = "Molise.Tot.Cov", visible =  F)%>%
+   add_lines(x= ~date, y = ~cases_Puglia, name = "Puglia.Vac", visible =  F)%>%
+  layout(
+  title = "Southern Regions",  
+  yaxis = list(title = " Number of People"),  xaxis = list(title = "Date"),
+  updatemenus = list(list( x=1.5, y = 0.6,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F,F,F)),  label = "Abruzzo.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F,F)), label = "Basilicata.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F,F)), label = "Calabria.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F,F)), label = "Campania.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T,F)), label = "Molise.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,F,F,F,T)), label = "Puglia.Vac")
+   )),
+   list( x=1.5, y = 0.5,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F,F,F,F,F)),  label = "Abruzzo.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F,F)), label = "Basilicata.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F,F)), label = "Calabria.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F,F)), label = "Campania.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T,F)), label = "Molise.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,F,F,F,T)), label = "Puglia.Vac")
+   )),
+   (list( x=1.5, y = 0.4,  buttons = list( 
+      list(method = "restyle", args = list("visible", list(T,F,F,F,F,F)),  label = "Abruzzo.Vac"),
+    list(method = "restyle", args = list("visible", list(F,T,F,F,F,F)), label = "Basilicata.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,T,F,F,F)), label = "Calabria.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,T,F,F)), label = "Campania.Vac"),
+     list(method = "restyle", args = list("visible", list(F,F,F,F,T,F)), label = "Molise.Vac"),
+  list(method = "restyle", args = list("visible", list(F,F,F,F,F,T)), label = "Puglia.Vac")))
+     )))
+)
+```
+
+#### Islands {-}
+
+```{r}
+
+tags$div(style="width: 100%; height: 4.5in",
+plot_ly(Region.ts %>% ungroup() %>% arrange(date) %>% mutate(cases = cases/10)%>%
+          select(date, Region, vacc.1d,positives, cases) %>% pivot_wider(names_from = "Region",
+                      values_from = c("vacc.1d", "positives", "cases")), x=~date ) %>% 
+  
+  add_lines(x= ~date, y = ~vacc.1d_Sardegna, name = "Sardegna.Vac", visible = T)%>%
+  add_lines(x= ~date, y = ~vacc.1d_Sicilia, name = "Sicilia.Vac", visible =  F)%>%
+    add_lines(x= ~date, y = ~positives_Sardegna, name = "Sardegna.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~positives_Sicilia, name = "Sicilia.Cov", visible =  F)%>%
+    add_lines(x= ~date, y = ~cases_Sardegna, name = "Sardegna.Tot.Cov", visible = T)%>%
+  add_lines(x= ~date, y = ~cases_Sicilia, name = "Sicilia.Tot.Cov", visible =  F)%>%
+  layout(
+  title = "Island Regions",  
+  yaxis = list(title = " Number of People"),  xaxis = list(title = "Date"),
+  updatemenus = list(list(x=1.5, y = 0.6,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F)),  label = "Sardegna.Vac"),
+  list(method = "restyle", args = list("visible", list(F,T)), label = "Sicilia.Vac")
+   )),
+   list(x=1.5, y = 0.5,  buttons = list( 
+    list(method = "restyle", args = list("visible", list(T,F)),  label = "Sardegna.Vac"),
+  list(method = "restyle", args = list("visible", list(F,T)), label = "Sicilia.Vac")
+   )),
+   (list(x=1.5, y = 0.4,  buttons = list( 
+      list(method = "restyle", args = list("visible", list(T,F)),  label = "Sardegna.Vac"),
+  list(method = "restyle", args = list("visible", list(F,T)), label = "Sicilia.Vac")))
+     )))
+)
+
+
+```
+
+### {-}
+
+**Analysis**: Looking at all this graphs I was able to see and confirm all the analysis and supposition made until now regarding Covid and vaccination among the various region.   
+We can clearly see here that the region who where more constant with the vaccination campaign are also the same that we saw have a better situation.  
+Also, looking at *P.A Bolzano* for example, we can see how an high level of total cases, not always match to an high and constant level of people that get vaccinated.   
+At the same time, looking at some regions as *Umbria*, we can see how despite an apparently low level of cumulative Covid cases, there is a strong willingness to get vaccinated.   
+
+<br>
+
+### Regression Analysis {.tabset .tabset-pills}
+
+Plotting the Linear Regression Line of 1st dose vaccination and daily positive cases for different areas to see whether there is any linear relationship between these variables. (*Important: look at different notes for every table*)
+
+<br>
+
+#### Regression Chart Italian Areas {-}
+
+I plotted here the scatter-plot of Daily Vaccination and Positive cases in number of people on the x,y axis and draw the linear regression line for every individual area.   
+I take the log value of vaccination and Positive cases to better standardize the number of people unit measurement between the variables.
+
+<br>
+
+```{r}
+
+Region.ts %>% group_by(date, area)%>%
+  filter(date >= "2020-12-27")%>% summarise(vacc.1d=sum(vacc.1d),
+                                           positives = sum(positives)) %>%
+  ggplot(aes(log(positives), log(vacc.1d), color = as.factor(area))) +
+  geom_point() +
+  theme_bw() +
+  labs(x = "Positive Cases", y = "Vaccination",
+       title = "Vaccination Vs Cases in Italian Areas") + 
+  stat_smooth(method = lm, se = F, fullrange = T)+ 
+  scale_colour_hue(name = "Location")
+
+
+```
+
+**Analysis**: When looking at different Areas, although all of them show a negative relationship between Negative Cases and vaccination rates relationship but the slope is not as downward as one would expect. 
+Note that I am looking at the two variable on a same day basis.
+
+#### Regression Chart Italian Regions {-}
+
+From a regional perspective I plot using the same method as above.
+
+<br>
+
+```{r}
+Region.ts %>% group_by(date, Region)%>%
+  filter(date >= "2020-12-27")%>% summarise(vacc.1d=sum(vacc.1d),
+                                           positives = sum(positives)) %>%
+  ggplot(aes(log(positives), log(vacc.1d), color = as.factor(Region))) +
+  geom_point() +
+  theme_bw() +
+  labs(x = "Positive Cases", y = "Vaccination",
+       title = "Vaccination Vs Cases in Italian Regions") + 
+  stat_smooth(method = lm, se = F, fullrange = T)+ 
+  scale_colour_hue(name = "Location")
+```
+
+**Analysis**: On a regional level the behavior is not very much uniform we see that most regions show a negative sloping relationship but some seem more neutral and exhibit not major relationship between the variables.
+
+### {-}
+
+<br>
+
+### Lagged regression analysis between Areas
+
+I conducted a simple linear regression analysis and plot the quantitative results in a table for the different to check the significance of the cases variable and its effect on vaccination for each area.
+
+```{r}
+
+Region.Reg <-  Region.ts %>% ungroup() %>% select(date,area, vacc.1d, positives) %>%
+  arrange(date) %>% filter(date >= "2021-01-01",
+                           date <= (today()-1)) %>% group_by(date, area)%>% summarise(vacc.1d = sum(vacc.1d), positives = sum(positives))
+
+center <- lm(log(vacc.1d) ~ log(positives), data=Region.Reg  %>%filter(area=="Center") )
+south <- lm(log(vacc.1d) ~ log(positives), data=Region.Reg  %>%filter(area=="South") )
+islands <- lm(log(vacc.1d) ~ log(positives), data=Region.Reg  %>%filter(area=="Islands") )
+north.e <- lm(log(vacc.1d) ~ log(positives), data=Region.Reg%>%filter(area=="North-east"))
+north.w <- lm(log(vacc.1d) ~ log(positives), data=Region.Reg%>%filter(area=="North-west"))
+
+stargazer(center, south,islands,north.e, north.w,  type = "text")
+
+
+```
+
+<br>
+
+**Analysis**: Although the result shows a highly significant impact of positive cases on vaccination for all the areas, but the model has a very low adjusted R squared suggesting one of two things or both:  
+1- Other variables have significantly more impact on a daily basis on the vaccination beyond the daily positive cases  
+2- I cannot use same day vaccination and cases as there might be a lag between the effect.
+
